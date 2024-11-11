@@ -5,8 +5,22 @@ services:
       dockerfile: Dockerfile
     container_name: fastapi_container
     restart: always
+    volumes:
+      - ./ChatService:/app
     ports:
       - "8000:8000"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_container
+    restart: always
+    volumes:
+      - mongo_data:/data/db
 
   nginx:
     image: nginx:latest
@@ -19,3 +33,6 @@ services:
       - ./WebInterface:/usr/share/nginx/html
     depends_on:
       - fastapi
+
+volumes:
+  mongo_data:
