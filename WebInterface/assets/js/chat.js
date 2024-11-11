@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(chat => {
             let chatElement = document.createElement('div');
             chatElement.innerHTML = `
-                <a href="#" onclick="preencherConversa(this, ${chat.id})" class="d-flex flex-stack py-3 my-2 chat-item">
+                <a href="#" onclick="preencherConversa(this, '${chat.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
                     <div class="d-flex align-items-center">
                         <div class="ms-5">
                             <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${chat.title}</span>
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             let chatElement = document.createElement('div');
             chatElement.innerHTML = `
-                <a href="#" onclick="preencherConversa(this, ${data.id})" class="d-flex flex-stack py-3 my-2 chat-item">
+                <a href="#" onclick="preencherConversa(this, '${data.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
                     <div class="d-flex align-items-center">
                         <div class="ms-5">
                             <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${data.title}</span>
