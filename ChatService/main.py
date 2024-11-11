@@ -1,9 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
+import json
 import os
 
 app = FastAPI()
@@ -74,3 +75,36 @@ async def create_message(message: Message):
     new_message = await db["messages"].insert_one(message_data)
     created_message = await db["messages"].find_one({"_id": new_message.inserted_id})
     return message_helper(created_message)
+
+
+connections = {}
+
+@app.websocket("/ws/{chat_id}")
+async def websocket_endpoint(websocket: WebSocket, chat_id: str):
+    await websocket.accept()
+    if chat_id not in connections:
+        connections[chat_id] = []
+    connections[chat_id].append(websocket)
+    
+    try:
+        while True:
+            data = await websocket.receive_text()
+            
+            message = Message(chat_id=chat_id, is_user=True, content=data, timestamp=datetime.now().isoformat())
+            message_data = message.model_dump(exclude={"id"})
+            new_message = await db["messages"].insert_one(message_data)
+            message.id = str(new_message.inserted_id)
+            
+            for connection in connections[chat_id]:
+                await connection.send_text(json.dumps({"is_user": True, "content": data, "timestamp": message.timestamp}))
+            
+            bot_response = f"Chatbot response to: {data}"
+            message = Message(chat_id=chat_id, is_user=False, content=bot_response, timestamp=datetime.now().isoformat())
+            message_data = message.model_dump(exclude={"id"})
+            new_message = await db["messages"].insert_one(message_data)
+            await websocket.send_text(json.dumps({"is_user": False, "content": bot_response, "timestamp": message.timestamp}))
+
+    except WebSocketDisconnect:
+        connections[chat_id].remove(websocket)
+        if not connections[chat_id]:  # Remove o chat_id se não houver mais conexões
+            del connections[chat_id]

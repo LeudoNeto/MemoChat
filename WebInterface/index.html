@@ -130,14 +130,14 @@
                             </div>
                         </div>
                         <div class="card-body" id="kt_chat_messenger_body">
-                            <div class="scroll-y me-n5 pe-5 h-300px h-lg-auto" data-kt-element="messages" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_header, #kt_app_header, #kt_app_toolbar, #kt_toolbar, #kt_footer, #kt_app_footer, #kt_chat_messenger_header, #kt_chat_messenger_footer" data-kt-scroll-wrappers="#kt_content, #kt_app_content, #kt_chat_messenger_body" data-kt-scroll-offset="5px">
+                            <div class="scroll-y me-n5 pe-5 h-300px h-lg-auto" id="messagesListScroll" data-kt-element="messages" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_header, #kt_app_header, #kt_app_toolbar, #kt_toolbar, #kt_footer, #kt_app_footer, #kt_chat_messenger_header, #kt_chat_messenger_footer" data-kt-scroll-wrappers="#kt_content, #kt_app_content, #kt_chat_messenger_body" data-kt-scroll-offset="5px">
                                 <div id="messagesList"></div>
                             </div>
                         </div>
                         <div class="card-footer pt-4" id="kt_chat_messenger_footer">
                             <div class="d-flex align-items-center">
-                                <textarea class="form-control form-control-flush mb-3" rows="1" data-kt-element="input" placeholder="Digite uma mensagem"></textarea>
-                                <button class="btn btn-sm btn-primary ms-3" type="button" data-kt-element="send"><i class="fa fa-paper-plane"></i></button>    
+                                <textarea class="form-control form-control-flush mb-3" rows="1" id="mensagemInput" placeholder="Digite uma mensagem"></textarea>
+                                <button class="btn btn-sm btn-primary ms-3" type="button" id="enviarMensagemButton"><i class="fa fa-paper-plane"></i></button>    
                             </div>
                         </div>
                     </div>
