@@ -2,51 +2,77 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from motor.motor_asyncio import AsyncIOMotorClient
+from bson import ObjectId
+import os
 
 app = FastAPI()
 
+MONGO_DETAILS = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+client = AsyncIOMotorClient(MONGO_DETAILS)
+db = client["chat_app"]
+
 class ChatMessage(BaseModel):
-    id: Optional[int] = None
+    id: Optional[str] = None
     title: str
     first_message: Optional[str] = ""
     last_message_time: Optional[str] = datetime.now().isoformat()
 
 
 class Message(BaseModel):
-    id: int
-    chat_id: int
+    id: Optional[str] = None
+    chat_id: str
     is_user: bool
     content: str
-    timestamp: str
+    timestamp: Optional[str] = datetime.now().isoformat()
 
-fake_db = [
-    {"id": 1, "title": "Chat com João", "first_message": "Oi João, tudo bem?", "last_message_time": "2024-11-08 14:30:00"},
-    {"id": 2,"title": "Suporte Técnico", "first_message": "Como posso te ajudar?", "last_message_time": "2024-11-09 10:00:00"},
-    {"id": 3,"title": "Grupo de Trabalho", "first_message": "Pessoal, vamos discutir o projeto", "last_message_time": "2024-11-09 12:15:00"},
-]
+    class Config:
+        json_encoders = {ObjectId: str}
+
+
+def chat_helper(chat) -> dict:
+    return {
+        "id": str(chat["_id"]),
+        "title": chat["title"],
+        "first_message": chat.get("first_message", ""),
+        "last_message_time": chat.get("last_message_time", datetime.now().isoformat())
+    }
+
+def message_helper(message) -> dict:
+    return {
+        "id": str(message["_id"]),
+        "chat_id": str(message["chat_id"]),
+        "is_user": message["is_user"],
+        "content": message["content"],
+        "timestamp": message["timestamp"]
+    }
 
 @app.get("/api/chats/", response_model=List[ChatMessage])
 async def get_all_chats():
-    return fake_db
-
-fake_messages_db = [
-    {"id": 1, "chat_id": 1, "is_user": False, "content": "Oi João, como posso te ajudar?", "timestamp": "2024-11-08 14:32:00"},
-    {"id": 2, "chat_id": 1, "is_user": True, "content": "Tudo bem, obrigado!", "timestamp": "2024-11-08 14:33:00"},
-    {"id": 3, "chat_id": 2, "is_user": False, "content": "Bem-vindo ao suporte técnico!", "timestamp": "2024-11-09 10:05:00"},
-    {"id": 4, "chat_id": 2, "is_user": True, "content": "Estou com um problema.", "timestamp": "2024-11-09 10:06:00"},
-    {"id": 5, "chat_id": 3, "is_user": False, "content": "Vamos discutir o projeto?", "timestamp": "2024-11-09 12:17:00"},
-    {"id": 6, "chat_id": 3, "is_user": True, "content": "Sim, estou pronto para começar.", "timestamp": "2024-11-09 12:18:00"},
-]
+    chats = []
+    async for chat in db["chats"].find():
+        chats.append(chat_helper(chat))
+    return chats
 
 @app.get("/api/messages/{chat_id}/", response_model=List[Message])
-async def get_messages_by_chat_id(chat_id: int):
-    # Filtra as mensagens pelo chat_id
-    messages = [message for message in fake_messages_db if message["chat_id"] == chat_id]
+async def get_messages_by_chat_id(chat_id: str):
+    messages = []
+    async for message in db["messages"].find({"chat_id": chat_id}):
+        messages.append(message_helper(message))
     if not messages:
         raise HTTPException(status_code=404, detail="Chat not found")
     return messages
 
 @app.post("/api/chats/", response_model=ChatMessage)
 async def create_chat(chat: ChatMessage):
-    fake_db.append(chat)
-    return chat
+    chat_data = chat.model_dump(exclude={"id"})
+    new_chat = await db["chats"].insert_one(chat_data)
+    created_chat = await db["chats"].find_one({"_id": new_chat.inserted_id})
+    return chat_helper(created_chat)
+
+@app.post("/api/messages/", response_model=Message)
+async def create_message(message: Message):
+    message_data = message.model_dump(exclude={"id"})
+    new_message = await db["messages"].insert_one(message_data)
+    created_message = await db["messages"].find_one({"_id": new_message.inserted_id})
+    return message_helper(created_message)
