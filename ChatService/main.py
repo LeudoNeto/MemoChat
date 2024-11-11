@@ -59,8 +59,6 @@ async def get_messages_by_chat_id(chat_id: str):
     messages = []
     async for message in db["messages"].find({"chat_id": chat_id}):
         messages.append(message_helper(message))
-    if not messages:
-        raise HTTPException(status_code=404, detail="Chat not found")
     return messages
 
 @app.post("/api/chats/", response_model=ChatMessage)
