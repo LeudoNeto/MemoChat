@@ -112,47 +112,9 @@ var preencherConversa = (conversa, conversaId) => {
         messagesList.innerHTML = '';
         data.forEach(message => {
             let messageElement = document.createElement('div');
-            
-            if (!message.is_user) { // Se a mensagem é do chatbot
-                messageElement.innerHTML = `
-                    <div class="d-flex justify-content-start mb-10">
-                        <div class="d-flex flex-column align-items-start">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="symbol symbol-35px symbol-circle">
-                                    <img alt="Pic" src="assets/investeailogo.png" />
-                                </div>
-                                <div class="ms-3">
-                                    <a href="#" class="fs-5 fw-bold text-gray-900 text-hover-primary me-1">Chatbot</a>
-                                    <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
-                                </div>
-                            </div>
-                            <div class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
-                                ${message.content}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else { // Se a mensagem é do usuário
-                messageElement.innerHTML = `
-                    <div class="d-flex justify-content-end mb-10">
-                        <div class="d-flex flex-column align-items-end">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="me-3">
-                                    <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
-                                </div>
-                                <div class="symbol symbol-35px symbol-circle">
-                                    <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder">You</span>
-                                </div>
-                            </div>
-                            <div class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end" data-kt-element="message-text">
-                                ${message.content}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
+            messageElement.innerHTML = message.is_user ? userMessage(message) : chatbotMessage(message);
             messagesList.appendChild(messageElement);
+
             messagesListScroll.scrollTo({
                 top: messagesListScroll.scrollHeight,
                 behavior: 'smooth'
@@ -181,45 +143,9 @@ var preencherConversa = (conversa, conversaId) => {
             console.log(event.data);
             const message = JSON.parse(event.data);
             let messageElement = document.createElement('div');
-            if (!message.is_user) { // Se a mensagem é do chatbot
-                messageElement.innerHTML = `
-                    <div class="d-flex justify-content-start mb-10">
-                        <div class="d-flex flex-column align-items-start">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="symbol symbol-35px symbol-circle">
-                                    <img alt="Pic" src="assets/investeailogo.png" />
-                                </div>
-                                <div class="ms-3">
-                                    <a href="#" class="fs-5 fw-bold text-gray-900 text-hover-primary me-1">Chatbot</a>
-                                    <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
-                                </div>
-                            </div>
-                            <div class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
-                                ${message.content}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else { // Se a mensagem é do usuário
-                messageElement.innerHTML = `
-                    <div class="d-flex justify-content-end mb-10">
-                        <div class="d-flex flex-column align-items-end">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="me-3">
-                                    <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
-                                </div>
-                                <div class="symbol symbol-35px symbol-circle">
-                                    <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder">You</span>
-                                </div>
-                            </div>
-                            <div class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end" data-kt-element="message-text">
-                                ${message.content}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
+            messageElement.innerHTML = message.is_user ? userMessage(message) : chatbotMessage(message);
             messagesList.appendChild(messageElement);
+            
             messagesListScroll.scrollTo({
                 top: messagesListScroll.scrollHeight,
                 behavior: 'smooth'
@@ -231,3 +157,44 @@ var preencherConversa = (conversa, conversaId) => {
     })
     .catch(error => console.error('Erro ao carregar mensagens:', error));
 };
+
+var userMessage = (message) => {
+    return `
+        <div class="d-flex justify-content-end mb-10">
+            <div class="d-flex flex-column align-items-end">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="me-3">
+                        <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
+                    </div>
+                    <div class="symbol symbol-35px symbol-circle">
+                        <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder">You</span>
+                    </div>
+                </div>
+                <div class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end" data-kt-element="message-text">
+                    ${message.content}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+var chatbotMessage = (message) => {
+    return `
+        <div class="d-flex justify-content-start mb-10">
+            <div class="d-flex flex-column align-items-start">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="symbol symbol-35px symbol-circle">
+                        <img alt="Pic" src="assets/investeailogo.png" />
+                    </div>
+                    <div class="ms-3">
+                        <a href="#" class="fs-5 fw-bold text-gray-900 text-hover-primary me-1">Chatbot</a>
+                        <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
+                    </div>
+                </div>
+                <div class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
+                    ${message.content}
+                </div>
+            </div>
+        </div>
+    `;
+}
