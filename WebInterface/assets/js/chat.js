@@ -129,6 +129,10 @@ var preencherConversa = (conversa, conversaId) => {
             chatsOffCanvasControl.click();
         }
 
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.close();
+        }
+
         ws = new WebSocket(`ws://localhost:8000/ws/${conversaId}`);
 
         ws.onopen = () => {
@@ -145,7 +149,7 @@ var preencherConversa = (conversa, conversaId) => {
             let messageElement = document.createElement('div');
             messageElement.innerHTML = message.is_user ? userMessage(message) : chatbotMessage(message);
             messagesList.appendChild(messageElement);
-            
+
             messagesListScroll.scrollTo({
                 top: messagesListScroll.scrollHeight,
                 behavior: 'smooth'
