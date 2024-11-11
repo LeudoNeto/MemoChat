@@ -1,0 +1,27 @@
+@media (min-width: 768px) {
+  #chatsOffCanvasControl {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  #chatsCard {
+    display: none;
+  }
+}
+
+.chat-item {
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.chat-item:hover, .chat-item.active {
+  background-color: #f1f1f4;
+  transition: background-color 0.3s;
+}
+
+[data-bs-theme=dark] {
+    .chat-item:hover, .chat-item.active {
+        background-color: #26272f;
+    }
+}
