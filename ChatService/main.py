@@ -1,14 +1,16 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 app = FastAPI()
 
 class ChatMessage(BaseModel):
-    id: int
+    id: Optional[int] = None
     title: str
-    first_message: str
-    last_message_time: str
+    first_message: Optional[str] = ""
+    last_message_time: Optional[str] = datetime.now().isoformat()
+
 
 class Message(BaseModel):
     id: int
@@ -43,3 +45,8 @@ async def get_messages_by_chat_id(chat_id: int):
     if not messages:
         raise HTTPException(status_code=404, detail="Chat not found")
     return messages
+
+@app.post("/api/chats/", response_model=ChatMessage)
+async def create_chat(chat: ChatMessage):
+    fake_db.append(chat)
+    return chat
