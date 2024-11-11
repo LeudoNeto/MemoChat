@@ -5,6 +5,7 @@ var chatsList = document.getElementById('chatsList');
 var chatsListOffCanvas = document.getElementById('chatsListOffCanvas');
 var chatsOffCanvasControl = document.getElementById('chatsOffCanvasControl');
 var messagesList = document.getElementById('messagesList');
+var messagesListScroll = document.getElementById('messagesListScroll');
 var chatTitle = document.getElementById('chatTitle');
 var newChatButton = document.getElementById('newChatButton');
 var enviarMensagemButton = document.getElementById('enviarMensagemButton');
@@ -152,6 +153,10 @@ var preencherConversa = (conversa, conversaId) => {
             }
 
             messagesList.appendChild(messageElement);
+            messagesListScroll.scrollTo({
+                top: messagesListScroll.scrollHeight,
+                behavior: 'smooth'
+            });
         });
         document.querySelectorAll('.chat-item').forEach(conversa => {
             conversa.classList.remove('active');
@@ -214,7 +219,11 @@ var preencherConversa = (conversa, conversaId) => {
                     </div>
                 `;
             }
-            messagesList.appendChild(messageElement);            
+            messagesList.appendChild(messageElement);
+            messagesListScroll.scrollTo({
+                top: messagesListScroll.scrollHeight,
+                behavior: 'smooth'
+            });
         };
           
           
