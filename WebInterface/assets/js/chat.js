@@ -134,13 +134,15 @@ var preencherConversa = (conversa, conversaId) => {
             ws.close();
         }
 
-        ws = new WebSocket(`ws://localhost:8000/ws/${conversaId}`);
+        ws = new WebSocket(`ws://localhost/ws/${conversaId}`);
 
         ws.onopen = () => {
+            enviarMensagemButton.disabled = false;
             console.log("Conectado ao WebSocket");
         };
 
         ws.onclose = () => {
+            enviarMensagemButton.disabled = true;
             console.log("Desconectado do WebSocket");
         };
 
