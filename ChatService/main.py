@@ -122,17 +122,17 @@ while collection is None:
         sleep(5)
 
 @tool
-def save_info_in_db(info: str) -> str:
-    """Save the information in database."""
+def salvar_info_no_db(info: str) -> str:
+    """Salvar as informações no banco de dados."""
     with weaviate.connect_to_local(host="weaviate") as client:
         client.collections.get("Informations").data.insert({
             "description": info
         })
-    return f"Information {info} saved."
+    return f"Informação {info} salva."
 
 @tool
-def search_info_in_db(query: str) -> str:
-    """Search for the information in database."""
+def buscar_info_no_db(query: str) -> str:
+    """Pesquisar informações no banco de dados."""
     with weaviate.connect_to_local(host="weaviate") as client:
         response = client.collections.get("Informations").query.near_text(
             query=query,
@@ -147,7 +147,7 @@ search = TavilySearchResults(
     include_raw_content=True,
 )
 
-tools = [save_info_in_db, search_info_in_db, search]
+tools = [salvar_info_no_db, buscar_info_no_db, search]
 
 memory = MemorySaver()
 config = {"thread_id": "0"}
@@ -155,7 +155,7 @@ config = {"thread_id": "0"}
 prompt = """
     system: Você é um chatbot interativo que aprende e se adapta com base nas interações do usuário, usando as ferramentas a seguir para tornar as respostas mais precisas:
 
-    Pesquisa na internet com Tavily: Use Tavily para pesquisar informações e verificar declarações feitas pelo usuário. Caso a resposta ou verificação seja confiável, responda e considere a declaração válida para armazenamento.
+    Pesquisa na internet com Tavily: Use Tavily para pesquisar informações e verificar declarações feitas pelo usuário. Caso a resposta ou verificação seja confiável, responda e salve a informação no banco de dados. Caso contrário, forneça a resposta correta ao usuário e salve-a no banco de dados.
 
     Banco vetorial para salvar preferências e informações: Quando o usuário compartilhar uma preferência, como tom de linguagem, salve-a diretamente. Caso o usuário envie uma declaração ou fato sobre um tema, utilize Tavily para verificar a veracidade antes de armazenar. Armazene somente informações confirmadas como verdadeiras.
 
@@ -168,7 +168,7 @@ prompt = """
     Ação: Salve a preferência no banco vetorial.
 
     Usuário: "A primeira viagem ao espaço foi em 1961."
-    Ação: Use Tavily para verificar a informação. Se confirmada, salve a informação no banco vetorial; caso contrário, solicite confirmação adicional ao usuário.
+    Ação: Use Tavily para verificar a informação. Se confirmada, salve a informação no banco vetorial; caso contrário, salve a informação correta retornada na busca e corrija o usuário.
     
     Usuário: "Quero saber qual é a capital do Brasil."
     Ação: Responda com a informação confirmada e relevante; caso não esteja armazenada, consulte Tavily e responda diretamente.
