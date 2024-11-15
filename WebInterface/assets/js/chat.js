@@ -134,7 +134,7 @@ var preencherConversa = (conversa, conversaId) => {
             ws.close();
         }
 
-        ws = new WebSocket(`ws://localhost/ws/${conversaId}`);
+        ws = new WebSocket(`ws://${window.location.hostname}/ws/${conversaId}`);
 
         ws.onopen = () => {
             enviarMensagemButton.disabled = false;
