@@ -1,11 +1,27 @@
+import os
+import json
+import dotenv
+from datetime import datetime
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
-import json
-import os
+
+import vertexai
+
+from langchain_google_vertexai import ChatVertexAI
+from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.messages import HumanMessage
+from langchain.tools import tool
+
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.prebuilt import create_react_agent
+
+dotenv.load_dotenv('.env')
+vertexai.init(project="light-haven-434800-m1", location="us-central1")
 
 app = FastAPI()
 
@@ -77,6 +93,67 @@ async def create_message(message: Message):
     return message_helper(created_message)
 
 
+model = ChatVertexAI(
+    model="gemini-1.5-flash",
+    max_tokens=8192,
+    temperature=1,
+    top_p=0.95,
+    max_retries=20,
+)
+
+infos = []
+
+@tool
+def save_info_in_db(info: str) -> str:
+    """Save the information in database."""
+    infos.append(info)
+    return f"Information {info} saved."
+
+@tool
+def search_info_in_db(query: str) -> str:
+    """Search for the information in database."""
+    return "\n".join([info for info in infos if query in info])
+
+search = TavilySearchResults(
+    max_results=3,
+    search_depth="advanced",
+    include_answer=True,
+    include_raw_content=True,
+)
+
+tools = [save_info_in_db, search_info_in_db, search]
+
+memory = MemorySaver()
+config = {"thread_id": "0"}
+
+prompt = """
+    system: Você é um chatbot interativo que aprende e se adapta com base nas interações do usuário, usando as ferramentas a seguir para tornar as respostas mais precisas:
+
+    Pesquisa na internet com Tavily: Use Tavily para pesquisar informações e verificar declarações feitas pelo usuário. Caso a resposta ou verificação seja confiável, responda e considere a declaração válida para armazenamento.
+
+    Banco vetorial para salvar preferências e informações: Quando o usuário compartilhar uma preferência, como tom de linguagem, salve-a diretamente. Caso o usuário envie uma declaração ou fato sobre um tema, utilize Tavily para verificar a veracidade antes de armazenar. Armazene somente informações confirmadas como verdadeiras.
+
+    Pesquisa em banco vetorial para consultas rápidas: Para perguntas e preferências anteriormente registradas, consulte o banco vetorial para fornecer respostas personalizadas de forma consistente.
+
+    
+    Exemplo de Fluxo de Interação:
+
+    Usuário: "Prefiro um tom mais formal nas respostas."
+    Ação: Salve a preferência no banco vetorial.
+
+    Usuário: "A primeira viagem ao espaço foi em 1961."
+    Ação: Use Tavily para verificar a informação. Se confirmada, salve a informação no banco vetorial; caso contrário, solicite confirmação adicional ao usuário.
+    
+    Usuário: "Quero saber qual é a capital do Brasil."
+    Ação: Responda com a informação confirmada e relevante; caso não esteja armazenada, consulte Tavily e responda diretamente.
+    
+    Usuário: "Gosto de respostas curtas e objetivas."
+    Ação: Salve essa preferência e adapte futuras respostas para o usuário.
+    """
+
+
+agent = create_react_agent(model, tools, checkpointer=memory, state_modifier=prompt)
+
 connections = {}
 
 @app.websocket("/ws/{chat_id}")
@@ -92,17 +169,39 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str):
             
             message = Message(chat_id=chat_id, is_user=True, content=data, timestamp=datetime.now().isoformat())
             message_data = message.model_dump(exclude={"id"})
-            new_message = await db["messages"].insert_one(message_data)
-            message.id = str(new_message.inserted_id)
+            await db["messages"].insert_one(message_data)
             
             for connection in connections[chat_id]:
                 await connection.send_text(json.dumps({"is_user": True, "content": data, "timestamp": message.timestamp}))
-            
-            bot_response = f"Chatbot response to: {data}"
-            message = Message(chat_id=chat_id, is_user=False, content=bot_response, timestamp=datetime.now().isoformat())
+
+            complete_response = ""
+            async for event in agent.astream_events(
+                {"messages": [HumanMessage(content=data)]}, config, version="v1"
+            ):
+                kind = event["event"]
+                if kind == "on_chat_model_stream":
+                    content = event["data"]["chunk"].content
+                    if content:
+                        complete_response += content
+                        for connection in connections[chat_id]:
+                            await connection.send_text(json.dumps({
+                                "is_user": False,
+                                "content": content,
+                                "is_complete": False,  # Stream ainda em andamento
+                                "timestamp": message.timestamp
+                            }))
+
+            for connection in connections[chat_id]:
+                await connection.send_text(json.dumps({
+                    "is_user": False,
+                    "content": "",
+                    "is_complete": True,  # Stream concluído
+                    "timestamp": message.timestamp
+                }))
+
+            message = Message(chat_id=chat_id, is_user=False, content=complete_response, timestamp=datetime.now().isoformat())
             message_data = message.model_dump(exclude={"id"})
-            new_message = await db["messages"].insert_one(message_data)
-            await websocket.send_text(json.dumps({"is_user": False, "content": bot_response, "timestamp": message.timestamp}))
+            await db["messages"].insert_one(message_data)
 
     except WebSocketDisconnect:
         connections[chat_id].remove(websocket)

@@ -25,3 +25,30 @@
         background-color: #26272f;
     }
 }
+
+.typing-animation span {
+  display: inline-block;
+  font-size: 1.2em;
+  animation: bounce 1.5s infinite;
+}
+
+.typing-animation span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-animation span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-animation span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+      transform: translateY(0);
+  }
+  40% {
+      transform: translateY(-10px);
+  }
+}

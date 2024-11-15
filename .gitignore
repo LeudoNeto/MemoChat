@@ -1,1 +1,5 @@
 *.pyc
+
+.env
+
+google_credentials.json

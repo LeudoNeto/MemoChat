@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     enviarMensagemButton.addEventListener('click', () => {
         ws.send(mensagemInput.value);
         mensagemInput.value = '';
+        enviarMensagemButton.disabled = true;
     });
 
 });
@@ -146,17 +147,45 @@ var preencherConversa = (conversa, conversaId) => {
         ws.onmessage = (event) => {
             console.log(event.data);
             const message = JSON.parse(event.data);
-            let messageElement = document.createElement('div');
-            messageElement.innerHTML = message.is_user ? userMessage(message) : chatbotMessage(message);
-            messagesList.appendChild(messageElement);
+        
+            if (message.is_user) {
+                let messageElement = document.createElement('div');
+                messageElement.innerHTML = userMessage(message);
+                messagesList.appendChild(messageElement);
 
+                let chatbotMessageElement = document.createElement('div');
+                chatbotMessageElement.id = 'chatbot-msg-streaming';
+                chatbotMessageElement.innerHTML = chatbotMessage({
+                    content: `
+                        <span class="typing-animation">
+                            <span>.</span><span>.</span><span>.</span>
+                        </span>
+                    `,
+                    timestamp: message.timestamp
+                });
+                messagesList.appendChild(chatbotMessageElement);
+
+            } else {
+                let chatbotMessageElement = document.getElementById('chatbot-msg-streaming');
+                
+                const messageContentElement = chatbotMessageElement.querySelector('#message-text');
+                if (messageContentElement.querySelector('.typing-animation')) {
+                    messageContentElement.innerHTML = '';
+                }
+                messageContentElement.textContent += message.content;
+        
+                if (message.is_complete) {
+                    chatbotMessageElement.removeAttribute('id');
+                    enviarMensagemButton.disabled = false;
+                }
+            }
+        
             messagesListScroll.scrollTo({
                 top: messagesListScroll.scrollHeight,
-                behavior: 'smooth'
+                behavior: 'smooth',
             });
         };
-          
-          
+        
 
     })
     .catch(error => console.error('Erro ao carregar mensagens:', error));
@@ -174,7 +203,7 @@ var userMessage = (message) => {
                         <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder">You</span>
                     </div>
                 </div>
-                <div class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end" data-kt-element="message-text">
+                <div class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end" id="message-text">
                     ${message.content}
                 </div>
             </div>
@@ -195,7 +224,7 @@ var chatbotMessage = (message) => {
                         <span class="text-muted fs-7 mb-1">${calcularTempoPassado(message.timestamp)}</span>
                     </div>
                 </div>
-                <div class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
+                <div class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start" id="message-text">
                     ${message.content}
                 </div>
             </div>
