@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 var calcularTempoPassado = (lastMessageTime) => {
     var lastMessageDate = new Date(lastMessageTime);
     var now = new Date();
-    var diff = now - lastMessageDate;
+    var diff = now - lastMessageDate + now.getTimezoneOffset() * 60000;
     var diffSeconds = diff / 1000;
     var diffMinutes = diffSeconds / 60;
     var diffHours = diffMinutes / 60;
