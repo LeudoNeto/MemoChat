@@ -2,6 +2,7 @@ import os
 import json
 import dotenv
 from datetime import datetime
+from time import sleep
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
@@ -19,6 +20,9 @@ from langchain.tools import tool
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
+
+import weaviate
+from weaviate.classes.config import Configure, Property, DataType
 
 dotenv.load_dotenv('.env')
 vertexai.init(project="light-haven-434800-m1", location="us-central1")
@@ -101,18 +105,40 @@ model = ChatVertexAI(
     max_retries=20,
 )
 
-infos = []
+collection = None
+while collection is None:
+    try:
+        with weaviate.connect_to_local(host="weaviate") as client:
+            if not client.collections.exists("Informations"):
+                client.collections.create(
+                    "Informations",
+                    vectorizer_config=Configure.Vectorizer.text2vec_transformers(),
+                    properties=[
+                        Property(name="description", data_type=DataType.TEXT),
+                    ],
+                )
+            collection = client.collections.get("Informations")
+    except weaviate.exceptions.WeaviateConnectionError:
+        sleep(5)
 
 @tool
 def save_info_in_db(info: str) -> str:
     """Save the information in database."""
-    infos.append(info)
+    with weaviate.connect_to_local(host="weaviate") as client:
+        client.collections.get("Informations").data.insert({
+            "description": info
+        })
     return f"Information {info} saved."
 
 @tool
 def search_info_in_db(query: str) -> str:
     """Search for the information in database."""
-    return "\n".join([info for info in infos if query in info])
+    with weaviate.connect_to_local(host="weaviate") as client:
+        response = client.collections.get("Informations").query.near_text(
+            query=query,
+            limit=3
+        )
+    return "\n".join([info.properties['description'] for info in response.objects])
 
 search = TavilySearchResults(
     max_results=3,
