@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', function() {
         else {
             newChatButtons[0].click();
             const checkForChats = setInterval(() => {
-                if (chatsList.children.length > 0) {
+                if (targetList.children.length > 0) {
                     clearInterval(checkForChats);
-                    chatsList.children[0].querySelector('.chat-item').click();
+                    targetList.children[0].querySelector('.chat-item').click();
                 }
             }, 1000);
 
@@ -138,7 +138,7 @@ var preencherConversa = (conversa, conversaId) => {
             conversa.classList.remove('active');
         });
         conversa.classList.add('active');
-        chatTitle.innerText = conversa.querySelector('.chat-title').innerText;
+        chatTitle.innerText = conversa.querySelector('.chat-title').innerHTML;
         if (window.innerWidth < 768) {
             offcanvas.hide();
         }
