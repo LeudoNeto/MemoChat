@@ -7,7 +7,7 @@ var chatsOffCanvasControl = document.getElementById('chatsOffCanvasControl');
 var messagesList = document.getElementById('messagesList');
 var messagesListScroll = document.getElementById('messagesListScroll');
 var chatTitle = document.getElementById('chatTitle');
-var newChatButton = document.getElementById('newChatButton');
+var newChatButtons = document.querySelectorAll('.new-chat-button');
 var enviarMensagemButton = document.getElementById('enviarMensagemButton');
 var mensagemInput = document.getElementById('mensagemInput');
 var ws = null;
@@ -40,32 +40,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    newChatButton.addEventListener('click', () => {
-        fetch('/api/chats/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({title: 'Novo Chat'})
-        })
-        .then(response => response.json())
-        .then(data => {
-            let chatElement = document.createElement('div');
-            chatElement.innerHTML = `
-                <a href="#" onclick="preencherConversa(this, '${data.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
-                    <div class="d-flex align-items-center">
-                        <div class="ms-5">
-                            <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${data.title}</span>
-                            <div class="fw-semibold text-muted">${data.first_message}</div>
+    newChatButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            fetch('/api/chats/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({title: 'Novo Chat'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                let chatElement = document.createElement('div');
+                chatElement.innerHTML = `
+                    <a href="#" onclick="preencherConversa(this, '${data.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
+                        <div class="d-flex align-items-center">
+                            <div class="ms-5">
+                                <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${data.title}</span>
+                                <div class="fw-semibold text-muted">${data.first_message}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex flex-column align-items-end mx-2">
-                        <span class="text-muted fs-7 mb-1">${calcularTempoPassado(data.last_message_time)}</span>
-                    </div>
-                </a>
-            `;
-            (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
-            chatElement.click();
+                        <div class="d-flex flex-column align-items-end mx-2">
+                            <span class="text-muted fs-7 mb-1">${calcularTempoPassado(data.last_message_time)}</span>
+                        </div>
+                    </a>
+                `;
+                (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
+                chatElement.click();
+            });
         });
     });
 
