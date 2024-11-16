@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({title: 'Novo Chat'})
+                body: JSON.stringify({ title: 'Novo Chat' })
             })
             .then(response => response.json())
             .then(data => {
@@ -43,11 +43,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </a>
                 `;
-                (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
-                chatElement.click();
+    
+                const targetList = window.innerWidth < 768 ? chatsListOffCanvas : chatsList;
+                targetList.insertBefore(chatElement, targetList.firstChild); // Adiciona antes do primeiro filho
+    
+                chatElement.querySelector('.chat-item').click();
             });
         });
     });
+    
 
     fetch('/api/chats/')
     .then(response => response.json())
