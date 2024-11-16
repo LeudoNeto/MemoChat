@@ -151,16 +151,13 @@ var preencherConversa = (conversa, conversaId) => {
 
         ws.onopen = () => {
             enviarMensagemButton.disabled = false;
-            console.log("Conectado ao WebSocket");
         };
 
         ws.onclose = () => {
             enviarMensagemButton.disabled = true;
-            console.log("Desconectado do WebSocket");
         };
 
         ws.onmessage = (event) => {
-            console.log(event.data);
             const message = JSON.parse(event.data);
         
             if (message.is_user) {
@@ -220,7 +217,6 @@ var preencherConversaTituloFirstMessage = (conversa, conversaId, first_message) 
     })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             const titleElement = conversa.querySelector('.chat-title');
             const firstMessageElement = conversa.querySelector('.chat-first-message');
 
