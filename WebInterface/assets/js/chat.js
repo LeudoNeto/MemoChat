@@ -14,9 +14,6 @@ var ws = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    messagesCard.style.height = window.innerHeight - messagesCard.offsetTop - 32 + 'px';
-    chatsCard.style.height = window.innerHeight - messagesCard.offsetTop - 32 + 'px';
-
     if (window.innerWidth < 768) {
         chatsOffCanvasControl.click();
     }
