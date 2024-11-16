@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 let chatElement = document.createElement('div');
                 chatElement.innerHTML = `
                     <a href="#" onclick="preencherConversa(this, '${data.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
-                        <div class="d-flex align-items-center">
-                            <div class="ms-5">
+                        <div class="d-flex align-items-center w-75">
+                            <div class="ms-5 w-100">
                                 <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${data.title}</span>
-                                <div class="fw-semibold text-muted">${data.first_message}</div>
+                                <div class="fw-semibold text-muted chat-first-message">${data.first_message}</div>
                             </div>
                         </div>
                         <div class="d-flex flex-column align-items-end mx-2">
@@ -57,10 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
             let chatElement = document.createElement('div');
             chatElement.innerHTML = `
                 <a href="#" onclick="preencherConversa(this, '${chat.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
-                    <div class="d-flex align-items-center">
-                        <div class="ms-5">
+                    <div class="d-flex align-items-center w-75">
+                        <div class="ms-5 w-100">
                             <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${chat.title}</span>
-                            <div class="fw-semibold text-muted">${chat.first_message}</div>
+                            <div class="fw-semibold text-muted chat-first-message">${chat.first_message}</div>
                         </div>
                     </div>
                     <div class="d-flex flex-column align-items-end mx-2">
@@ -180,6 +180,10 @@ var preencherConversa = (conversa, conversaId) => {
                 });
                 messagesList.appendChild(chatbotMessageElement);
 
+                if (messagesList.children.length === 2) {
+                    preencherConversaTituloFirstMessage(conversa, conversaId, message.content);
+                }
+
             } else {
                 let chatbotMessageElement = document.getElementById('chatbot-msg-streaming');
                 
@@ -205,6 +209,46 @@ var preencherConversa = (conversa, conversaId) => {
     })
     .catch(error => console.error('Erro ao carregar mensagens:', error));
 };
+
+var preencherConversaTituloFirstMessage = (conversa, conversaId, first_message) => {
+    fetch(`/api/chats/${conversaId}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ first_message: first_message })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            const titleElement = conversa.querySelector('.chat-title');
+            const firstMessageElement = conversa.querySelector('.chat-first-message');
+
+            const animateText = (element, newText, callback) => {
+                let currentText = "";
+                let index = 0;
+
+                const interval = setInterval(() => {
+                    if (index < newText.length) {
+                        currentText += newText[index];
+                        element.innerText = currentText;
+                        index++;
+                    } else {
+                        clearInterval(interval);
+                        if (callback) callback(); // Chama o callback após terminar
+                    }
+                }, 50);
+            };
+
+            animateText(titleElement, data.title, () => {
+                animateText(firstMessageElement, data.first_message);
+            });
+        })
+        .catch(error => {
+            console.error("Erro ao atualizar conversa:", error);
+        });
+};
+
 
 var userMessage = (message) => {
     return `

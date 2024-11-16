@@ -33,12 +33,14 @@ MONGO_DETAILS = os.getenv("MONGO_URL", "mongodb://localhost:27017")
 client = AsyncIOMotorClient(MONGO_DETAILS)
 db = client["chat_app"]
 
-class ChatMessage(BaseModel):
+class Chat(BaseModel):
     id: Optional[str] = None
     title: str
     first_message: Optional[str] = ""
     last_message_time: Optional[str] = datetime.now().isoformat()
 
+class UpdateChatRequest(BaseModel):
+    first_message: str
 
 class Message(BaseModel):
     id: Optional[str] = None
@@ -68,7 +70,7 @@ def message_helper(message) -> dict:
         "timestamp": message["timestamp"]
     }
 
-@app.get("/api/chats/", response_model=List[ChatMessage])
+@app.get("/api/chats/", response_model=List[Chat])
 async def get_all_chats():
     chats = []
     async for chat in db["chats"].find():
@@ -82,12 +84,27 @@ async def get_messages_by_chat_id(chat_id: str):
         messages.append(message_helper(message))
     return messages
 
-@app.post("/api/chats/", response_model=ChatMessage)
-async def create_chat(chat: ChatMessage):
+@app.post("/api/chats/", response_model=Chat)
+async def create_chat(chat: Chat):
     chat_data = chat.model_dump(exclude={"id"})
     new_chat = await db["chats"].insert_one(chat_data)
     created_chat = await db["chats"].find_one({"_id": new_chat.inserted_id})
     return chat_helper(created_chat)
+
+@app.patch("/api/chats/{chat_id}/", response_model=Chat)
+async def update_chat_title(chat_id: str, body: UpdateChatRequest):
+    response = await chats_title_model.ainvoke([
+        HumanMessage(content=f"""
+            Crie um título para o chat com a seguinte mensagem inicial:
+            {body.first_message}
+            Retorne apenas o título do chat em texto simples.
+        """)
+    ])
+    chat = await db["chats"].find_one({"_id": ObjectId(chat_id)})
+    chat["first_message"] = body.first_message
+    chat["title"] = response.content.strip()
+    await db["chats"].update_one({"_id": ObjectId(chat_id)}, {"$set": chat})
+    return chat_helper(chat)
 
 @app.post("/api/messages/", response_model=Message)
 async def create_message(message: Message):
@@ -98,11 +115,19 @@ async def create_message(message: Message):
 
 
 model = ChatVertexAI(
-    model="gemini-1.5-flash",
+    model="gemini-1.5-pro",
     max_tokens=8192,
     temperature=1,
     top_p=0.95,
     max_retries=20,
+)
+
+chats_title_model = ChatVertexAI(
+    model="gemini-1.5-flash",
+    max_tokens=1024,
+    temperature=1,
+    top_p=0.95,
+    max_retries=10,
 )
 
 collection = None
