@@ -239,6 +239,7 @@ var preencherConversaTituloFirstMessage = (conversa, conversaId, first_message) 
             animateText(titleElement, data.title, () => {
                 animateText(firstMessageElement, data.first_message);
             });
+            animateText(chatTitle, data.title);
         })
         .catch(error => {
             console.error("Erro ao atualizar conversa:", error);
