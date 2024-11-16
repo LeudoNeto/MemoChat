@@ -18,28 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chatsOffCanvasControl.click();
     }
 
-    fetch('/api/chats/')
-    .then(response => response.json())
-    .then(data => {
-        data.forEach(chat => {
-            let chatElement = document.createElement('div');
-            chatElement.innerHTML = `
-                <a href="#" onclick="preencherConversa(this, '${chat.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
-                    <div class="d-flex align-items-center">
-                        <div class="ms-5">
-                            <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${chat.title}</span>
-                            <div class="fw-semibold text-muted">${chat.first_message}</div>
-                        </div>
-                    </div>
-                    <div class="d-flex flex-column align-items-end mx-2">
-                        <span class="text-muted fs-7 mb-1">${calcularTempoPassado(chat.last_message_time)}</span>
-                    </div>
-                </a>
-            `;
-            (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
-        });
-    });
-
     newChatButtons.forEach(button => {
         button.addEventListener('click', () => {
             fetch('/api/chats/', {
@@ -69,6 +47,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 chatElement.click();
             });
         });
+    });
+
+    fetch('/api/chats/')
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(chat => {
+            let chatElement = document.createElement('div');
+            chatElement.innerHTML = `
+                <a href="#" onclick="preencherConversa(this, '${chat.id}')" class="d-flex flex-stack py-3 my-2 chat-item">
+                    <div class="d-flex align-items-center">
+                        <div class="ms-5">
+                            <span href="#" class="fs-5 fw-bold text-gray-900 mb-2 chat-title">${chat.title}</span>
+                            <div class="fw-semibold text-muted">${chat.first_message}</div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column align-items-end mx-2">
+                        <span class="text-muted fs-7 mb-1">${calcularTempoPassado(chat.last_message_time)}</span>
+                    </div>
+                </a>
+            `;
+            (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
+        });
+        if (data.length > 0) {
+            chatsList.children[0].querySelector('.chat-item').click();
+        }
+        else {
+            newChatButtons[0].click();
+            const checkForChats = setInterval(() => {
+                if (chatsList.children.length > 0) {
+                    clearInterval(checkForChats);
+                    chatsList.children[0].querySelector('.chat-item').click();
+                }
+            }, 1000);
+
+        }
     });
 
     enviarMensagemButton.addEventListener('click', () => {

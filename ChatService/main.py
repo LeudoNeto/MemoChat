@@ -73,7 +73,7 @@ async def get_all_chats():
     chats = []
     async for chat in db["chats"].find():
         chats.append(chat_helper(chat))
-    return chats
+    return reversed(chats)
 
 @app.get("/api/messages/{chat_id}/", response_model=List[Message])
 async def get_messages_by_chat_id(chat_id: str):
