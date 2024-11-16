@@ -3,7 +3,7 @@ var messagesCard = document.getElementById('messagesCard');
 var chatsColumn = document.getElementById('chatsColumn');
 var chatsList = document.getElementById('chatsList');
 var chatsListOffCanvas = document.getElementById('chatsListOffCanvas');
-var chatsOffCanvasControl = document.getElementById('chatsOffCanvasControl');
+var offcanvas = new bootstrap.Offcanvas('.offcanvas-start');
 var messagesList = document.getElementById('messagesList');
 var messagesListScroll = document.getElementById('messagesListScroll');
 var chatTitle = document.getElementById('chatTitle');
@@ -14,10 +14,6 @@ var ws = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    if (window.innerWidth < 768) {
-        chatsOffCanvasControl.click();
-    }
-
     newChatButtons.forEach(button => {
         button.addEventListener('click', () => {
             fetch('/api/chats/', {
@@ -56,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/chats/')
     .then(response => response.json())
     .then(data => {
+        const targetList = window.innerWidth < 768 ? chatsListOffCanvas : chatsList;
         data.forEach(chat => {
             let chatElement = document.createElement('div');
             chatElement.innerHTML = `
@@ -71,10 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </a>
             `;
-            (window.innerWidth < 768 ? chatsListOffCanvas : chatsList).appendChild(chatElement);
+            targetList.appendChild(chatElement);
         });
         if (data.length > 0) {
-            chatsList.children[0].querySelector('.chat-item').click();
+            targetList.children[0].querySelector('.chat-item').click();
         }
         else {
             newChatButtons[0].click();
@@ -143,7 +140,7 @@ var preencherConversa = (conversa, conversaId) => {
         conversa.classList.add('active');
         chatTitle.innerText = conversa.querySelector('.chat-title').innerText;
         if (window.innerWidth < 768) {
-            chatsOffCanvasControl.click();
+            offcanvas.hide();
         }
 
         if (ws && ws.readyState === WebSocket.OPEN) {
